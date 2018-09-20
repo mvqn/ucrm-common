@@ -1,6 +1,6 @@
 {
     "name": "mvqn/ucrm-common",
-    "description": "UCRM Plugin module for bundling a plugin.",
+    "description": "A set of helper libraries to ease UCRM Plugin development.",
     "minimum-stability": "stable",
     "type": "library",
     "license": "MIT",
