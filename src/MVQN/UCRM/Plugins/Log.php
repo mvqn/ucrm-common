@@ -1,11 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace UCRM\Plugins;
+namespace MVQN\UCRM\Plugins;
 
 
 final class Log
 {
+    private const DEFAULT_JSON_OPTIONS = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+
     /** @const string TIMESTAMP_FORMAT The format to be used by the logging functions as a timestamp. */
     private const TIMESTAMP_FORMAT = "Y-m-d H:i:s.u";
 
@@ -45,27 +47,25 @@ final class Log
 
     /**
      * @param array $array
+     * @param int $options
      * @return string
      */
-    public static function writeArray(array $array): string
+    public static function writeArray(array $array, int $options = self::DEFAULT_JSON_OPTIONS): string
     {
-        /*
-        $pairs = [];
-
-        foreach($array as $key => $value)
-            $pairs[] = "$key => $value";
-
-        $text = "[ ".implode(", ", $pairs)." ]";
-        */
-        $text = json_encode($array, JSON_UNESCAPED_SLASHES);
-
+        $text = json_encode($array, $options);
         return self::write($text);
     }
 
-
-
-
-
+    /**
+     * @param \JsonSerializable $object
+     * @param int $options
+     * @return string
+     */
+    public static function writeObject(\JsonSerializable $object, int $options = self::DEFAULT_JSON_OPTIONS): string
+    {
+        $text = json_encode($object, $options);
+        return self::write($text);
+    }
 
     /**
      * Clears this Plugin's log file.

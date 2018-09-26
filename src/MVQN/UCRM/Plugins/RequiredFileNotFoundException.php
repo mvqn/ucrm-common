@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace UCRM\Plugins;
+namespace MVQN\UCRM\Plugins;
 
 
 

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace UCRM\Plugins;
+namespace MVQN\UCRM\Plugins;
 
 
 /**
@@ -41,84 +41,19 @@ final class Plugin
     private static $_usingZip = false;
 
     // =================================================================================================================
-    // PRIVATE METHODS
+    // METHODS: Paths
     // -----------------------------------------------------------------------------------------------------------------
 
     /**
-     * Bundler::inIgnoreFile()
-     * Checks an optional .zipignore file for inclusion of the specified string.
+     * Attempts to automatically determine the correct project (production/development) root path.  This method also
+     * recognizes when the template/preferred folder structure is being used and makes adjustments as needed.
      *
-     * @param string $path The relative path for which to search in the ignore file.
-     * @param string $ignore The path to the optional ignore file, defaults to project root.
-     *
-     * @return bool Returns true if the path is found in the file, otherwise false.
+     * @return string Returns the best candidate for the project (production/development) root path.
      */
-    private static function inIgnoreFile(string $path, string $ignore = ""): bool
+    public static function autoPath(): string
     {
-        $ignore = $ignore ?: realpath(self::DEFAULT_IGNORE_PATH);
-
-        if (!file_exists($ignore)) {
-            return false;
-        }
-
-        $lines = explode(PHP_EOL, file_get_contents($ignore));
-
-        foreach ($lines as $line) {
-            $line = trim($line);
-
-            if ($line === "")
-                continue;
-
-            $starts_with = substr($line, 0, 1) !== "#" && substr($path, 0, strlen($line)) === $line;
-
-            if ($starts_with)
-                return true;
-        }
-
-        return false;
-    }
-
-    // =================================================================================================================
-    // PUBLIC METHODS
-    // -----------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Plugin::rootPath()
-     *
-     * Attempts to automatically determine the correct project root path, or can override the automatic detection by
-     * providing the actual project root.  This method also recognizes when the template/preferred folder structure is
-     * being used.
-     *
-     * @param string|null $path An optional overridden path to use in place of the automatically detected path.
-     * @param bool $save An optional flag to determine whether or not the overridden path is saved for future use.
-     * @return string Returns the absolute ROOT path of this Plugin, regardless of development or production server.
-     */
-    public static function rootPath(?string $path = "", bool $save = false): string
-    {
-        // IF an override path has been provided...
-        if($path !== "" && $path !== null)
-        {
-            // AND save is set, save this overridden path for future use...
-            if($save)
-                self::$_rootPath = realpath($path);
-
-            // OTHERWISE, return this overridden path only this one-time!
-            return realpath($path);
-        }
-        // OTHERWISE, no override path has been provided...
-        else
-        {
-            // AND save is set, reset to automatic detection...
-            if($save)
-                self::$_rootPath = "";
-
-            // OTHERWISE, get the previously saved/detected path!
-            if(self::$_rootPath !== "")
-                return self::$_rootPath;
-        }
-
-        // .../ucrm-plugin-core/
-        $this_root = realpath(__DIR__."/../../../");
+        // .../ucrm-common/
+        $this_root = realpath(__DIR__."/../../../../");
 
         // .../mvqn/
         $mvqn_root = realpath($this_root."/../");
@@ -139,6 +74,10 @@ final class Plugin
                 $ucrm_root = realpath($ucrm_root . "/../");
                 self::$_usingZip = true;
             }
+            else
+            {
+                self::$_usingZip = false;
+            }
 
             // THEN set and return the path to the root of the Plugin using this library!
             self::$_rootPath = $ucrm_root;
@@ -152,7 +91,41 @@ final class Plugin
         }
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
+    /**
+     * Attempts to automatically determine the correct project (production/development) root path, or overrides the
+     * automatic detection when a path is provided.  This method also recognizes when the template/preferred folder
+     * structure is being used.
+     *
+     * @param string $path An optional overridden path to use in place of the automatically detected path.
+     * @return string Returns the absolute ROOT path of this Plugin, regardless of development or production server.
+     */
+    public static function rootPath(string $path = ""): string
+    {
+        // IF an override path has been provided...
+        if($path !== "")
+        {
+            self::$_rootPath = realpath($path);
+            self::$_usingZip = file_exists(self::$_rootPath."/zip");
+        }
+        // OTHERWISE, no override path has been provided...
+        else
+        {
+            // Get the previously saved/detected path, if any...
+            if(self::$_rootPath === "")
+                self::autoPath();
+        }
+
+        // Finally, return the root path!
+        return self::$_rootPath;
+    }
+
+    /**
+     * @return bool
+     */
+    public static function usingZip(): bool
+    {
+        return self::rootPath() !== "" && self::$_usingZip;
+    }
 
     /**
      * @return string Returns the absolute DATA path of this Plugin, regardless of development or production server.
@@ -162,6 +135,8 @@ final class Plugin
         return realpath(self::rootPath().(self::$_usingZip ? "/zip" : "")."/data/");
     }
 
+    // =================================================================================================================
+    // METHODS: States (executing/running)
     // -----------------------------------------------------------------------------------------------------------------
 
     /**
@@ -169,10 +144,9 @@ final class Plugin
      */
     public static function executing(): bool
     {
+        // NEVER really going to be in the 'zip' folder here!
         return file_exists(self::rootPath().(self::$_usingZip ? "/zip" : "")."/.ucrm-plugin-execution-requested");
     }
-
-    // -----------------------------------------------------------------------------------------------------------------
 
     /**
      * @return bool Returns true if this Plugin is currently executing, otherwise false.
@@ -183,6 +157,8 @@ final class Plugin
         return file_exists(self::rootPath().(self::$_usingZip ? "/zip" : "")."/.ucrm-plugin-running");
     }
 
+    // =================================================================================================================
+    // METHODS: Objects (Config, Manifest, Data)
     // -----------------------------------------------------------------------------------------------------------------
 
     /**
@@ -202,8 +178,6 @@ final class Plugin
         return new Config($json);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-
     /**
      * @return Manifest Returns the manifest.json of this Plugin as a Manifest object.
      * @throws RequiredFileNotFoundException Thrown an exception when a manifest.json file cannot be found.
@@ -214,23 +188,10 @@ final class Plugin
 
         if(!file_exists($manifest_file))
             throw new RequiredFileNotFoundException(
-                "A manifest.json file could not be found at '".$manifest_file."'.");
+                "A 'manifest.json' file could not be found at '".$manifest_file."'.");
 
         return new Manifest($manifest_file);
     }
-
-    // -----------------------------------------------------------------------------------------------------------------
-
-    /**
-     * @param string $message A message to output to the plugin's log.
-     * @return string Returns the entire message, including timestamp, as output to the log file.
-     */
-    public static function log(string $message): string
-    {
-        return Log::write($message);
-    }
-
-    // -----------------------------------------------------------------------------------------------------------------
 
     /**
      * @return Data Returns the Data from the ucrm.json file that was generated by the UCRM.
@@ -249,14 +210,47 @@ final class Plugin
         return new Data($json);
     }
 
+    // =================================================================================================================
+    // METHODS: Bundling
+    // -----------------------------------------------------------------------------------------------------------------
 
     /**
-     * Bundler::bundle()
+     * Checks an optional .zipignore file for inclusion of the specified string.
      *
+     * @param string $path The relative path for which to search in the ignore file.
+     * @param string $ignore The path to the optional ignore file, defaults to project root.
+     *
+     * @return bool Returns true if the path is found in the file, otherwise false.
+     */
+    private static function inIgnoreFile(string $path, string $ignore = ""): bool
+    {
+        $ignore = $ignore ?: realpath(self::DEFAULT_IGNORE_PATH);
+
+        if (!file_exists($ignore))
+            return false;
+
+        $lines = explode(PHP_EOL, file_get_contents($ignore));
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if ($line === "")
+                continue;
+
+            $starts_with = substr($line, 0, 1) !== "#" && substr($path, 0, strlen($line)) === $line;
+
+            if ($starts_with)
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Creates a zip archive for use when installing this Plugin.
      *
-     * @param string $root Path to root of the project.
-     * @param string $ignore Path to the optional .zipignore file.
+     * @param string $root Path to root of the project, defaults to currently determined root path.
+     * @param string $ignore Path to the optional .zipignore file, defaults to project root.
      */
     public static function bundle(string $root = "", string $ignore = ""): void
     {
@@ -334,10 +328,7 @@ final class Plugin
     }
 
 
-    public static function usingZip(): bool
-    {
-        return self::$_usingZip;
-    }
+
 
 
 
