@@ -37,8 +37,7 @@ final class SettingsBuilder
         $_class
             ->setFinal()
             ->setExtends(self::CLASS_BASE)
-            ->addComment("@author Ryan Spaeth <rspaeth@mvqn.net>")
-            ->addComment("\n");
+            ->addComment("@author Ryan Spaeth <rspaeth@mvqn.net>\n");
 
         foreach($data as $setting)
         {

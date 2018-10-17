@@ -8,4 +8,26 @@ use MVQN\Dynamics\AutoObject;
 abstract class SettingsBase extends AutoObject
 {
 
+
+
+    protected static function __beforeFirstCall(): bool
+    {
+        $class = get_called_class();
+
+        $path = Plugin::dataPath();
+
+        if(!file_exists("$path/config.json"))
+            return false;
+
+        $settings = json_decode(file_get_contents("$path/config.json"), true);
+
+        foreach($settings as $key => $value)
+            if(property_exists($class, $key))
+                $class::$$key = $value;
+
+        return true;
+    }
+
+
+
 }
