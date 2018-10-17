@@ -48,6 +48,7 @@ final class SettingsBuilder
             $_property = $_class->addProperty($_setting->key);
             $_property
                 ->setVisibility("protected")
+                ->setStatic()
                 ->addComment("{$_setting->label}")
                 ->addComment("@var {$type} {$_setting->description}");
 
