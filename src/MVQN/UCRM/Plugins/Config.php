@@ -13,6 +13,7 @@ use JsonSerializable;
  * @package UCRM\Plugins
  * @author Ryan Spaeth <rspaeth@mvqn.net>
  * @final
+ * @deprecated Use SettingsBuilder::generate() and then the subsequently generated Settings class to retrieve settings.
  */
 final class Config implements JsonSerializable
 {

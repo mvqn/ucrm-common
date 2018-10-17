@@ -164,6 +164,7 @@ final class Plugin
     /**
      * @return Config Returns the data/config.json of this Plugin.
      * @throws RequiredFileNotFoundException Thrown an exception when a config.json file cannot be found.
+     * @deprecated Use SettingsBuilder::generate() and then the subsequently generated Settings class to retrieve settings.
      */
     public static function config(): Config
     {

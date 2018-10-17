@@ -14,7 +14,9 @@
         "php": "~7.1",
         "ext-curl": "*",
         "ext-json": "*",
-        "ext-zip": "*"
+        "ext-zip": "*",
+        "mvqn/dynamics": "~1",
+        "nette/php-generator": "~3.2"
     },
     "require-dev": {
         "phpunit/phpunit": "7.2.7"
