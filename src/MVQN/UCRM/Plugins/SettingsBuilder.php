@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace MVQN\UCRM\Plugins;
 
+use Nette\PhpGenerator\Constant;
 use Nette\PhpGenerator\PhpNamespace;
 
 final class SettingsBuilder
@@ -13,12 +14,13 @@ final class SettingsBuilder
     /**
      * Generates a class with auto-implemented methods and then saves it to a PSR-4 compatible file.
      * @param string $namespace An optional namespace in which to include this class.
+     * @param Constant[] An optional list of constants to append to the class.
      * @throws \Exception Throws an Exception if any errors occur.
      */
-    public static function generate(string $namespace = ""): void
+    public static function generate(string $namespace = "", array $constants = []): void
     {
         $root = Plugin::usingZip() ? Plugin::rootPath()."/zip/" : Plugin::rootPath();
-        $path = $root."/src/".str_replace("\\", "/", $namespace);
+        $path = $root."src/".str_replace("\\", "/", $namespace);
 
         if(!file_exists($root."/manifest.json"))
             return;
@@ -38,6 +40,15 @@ final class SettingsBuilder
             ->setFinal()
             ->setExtends(self::CLASS_BASE)
             ->addComment("@author Ryan Spaeth <rspaeth@mvqn.net>\n");
+
+        $filePath = realpath($path."/Settings.php");
+
+        $_class->addConstant("FILE_PATH", $filePath)
+            ->setVisibility("protected")
+            ->addComment("@const string The full path of this Settings file.");
+
+        foreach($constants as $constant)
+            $_class->addMember($constant);
 
         foreach($data as $setting)
         {
@@ -62,6 +73,9 @@ final class SettingsBuilder
             "declare(strict_types=1);\n".
             "\n".
             $_namespace;
+
+        // Hack to add extra line return between const declarations...
+        $code = str_replace(";\n\t/** @const", ";\n\n\t/** @const", $code);
 
         file_put_contents($path."/".self::CLASS_NAME.".php", $code);
 
