@@ -18,7 +18,7 @@ final class SettingsBuilder
     public static function generate(string $namespace = ""): void
     {
         $root = Plugin::usingZip() ? Plugin::rootPath()."/zip/" : Plugin::rootPath();
-        $path = $root."/src/$namespace";
+        $path = $root."/src/".str_replace("\\", "/", $namespace);
 
         if(!file_exists($root."/manifest.json"))
             return;
