@@ -26,7 +26,7 @@ abstract class SettingsBase extends AutoObject
         $namespace = $class->getNamespace()->getName();
 
         // Get the file's path from it's own 'const'.
-        $filePath = $class->getConstants()["FILE_PATH"]->getValue();
+        //$filePath = $class->getConstants()["FILE_PATH"]->getValue();
 
         if(self::$constants === null)
             self::$constants = [];

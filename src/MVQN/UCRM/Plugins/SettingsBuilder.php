@@ -47,6 +47,27 @@ final class SettingsBuilder
             ->setVisibility("protected")
             ->addComment("@const string The full path of this Settings file.");
 
+        if(file_exists($root."/ucrm.json"))
+        {
+            $ucrm = json_decode(file_get_contents($root."/ucrm.json"), true);
+
+            $_class->addConstant("UCRM_PUBLIC_URL", $ucrm["ucrmPublicUrl"])
+                ->setVisibility("public")
+                ->addComment("@const string The publicly accessible URL of this UCRM, null if not configured in UCRM.");
+
+            // Seems to be missing from the latest builds of UCRM ???
+            if(array_key_exists("pluginPublicUrl", $ucrm))
+            {
+                $_class->addConstant("PLUGIN_PUBLIC_URL", $ucrm["pluginPublicUrl"])
+                    ->setVisibility("public")
+                    ->addComment("@const string The publicly accessible URL assigned to this Plugin by the UCRM.");
+            }
+
+            $_class->addConstant("PLUGIN_APP_KEY", $ucrm["pluginAppKey"])
+                ->setVisibility("public")
+                ->addComment("@const string An automatically generated UCRM API 'App Key' with read/write access.");
+        }
+
         foreach($constants as $constant)
             $_class->addMember($constant);
 
